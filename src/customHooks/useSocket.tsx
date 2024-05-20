@@ -1,65 +1,75 @@
 import { useCallback, useEffect, useState } from "react";
-import io, { Socket } from "socket.io-client";
+import * as io from "socket.io-client";
 import { SOCKET_BASE_URL } from "../constants/apiConstants";
 
+interface ServerToClientEvents {
+    read_message: (data: { username: string; room: string; content: string; messageType: string; createdDateTime: string }) => void;
+}
+
+interface ClientToServerEvents {
+    send_message: (data: { room: string; content: string; username: string; messageType: string }) => void;
+}
+
 interface SocketResponse {
-  room: string;
-  content: string;
-  username: string;
-  messageType: string;
-  createdDateTime: string;
+    room: string;
+    content: string;
+    username: string;
+    messageType: string;
+    createdDateTime: string;
 }
 
-interface UseSocket {
-  socketResponse: SocketResponse;
-  isConnected: boolean;
-  sendData: (payload: { content: string }) => void;
+interface UseSocketReturnType {
+    socketResponse: SocketResponse;
+    isConnected: boolean;
+    sendData: (payload: { content: string }) => void;
 }
 
-export const useSocket = (room: string, username: string): UseSocket => {
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [socketResponse, setSocketResponse] = useState<SocketResponse>({
-    room: "",
-    content: "",
-    username: "",
-    messageType: "",
-    createdDateTime: "",
-  });
-  const [isConnected, setConnected] = useState(false);
+export const useSocket = (room: string, username: string): UseSocketReturnType => {
+    const [socket, setSocket] = useState<io.Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
+    const [socketResponse, setSocketResponse] = useState<SocketResponse>({
+        room: "",
+        content: "",
+        username: "",
+        messageType: "",
+        createdDateTime: "",
+    });
+    const [isConnected, setConnected] = useState<boolean>(false);
 
-  const sendData = useCallback(
-    (payload: { content: string }) => {
-      if (socket) {
-        socket.emit("send_message", {
-          room: room,
-          content: payload.content,
-          username: username,
-          messageType: "CLIENT",
+    const sendData = useCallback((payload: { content: string }) => {
+        if (socket) {
+            socket.emit("send_message", {
+                room: room,
+                content: payload.content,
+                username: username,
+                messageType: "CLIENT",
+            });
+        }
+    }, [socket, room, username]);
+
+    useEffect(() => {
+        const s: io.Socket<ServerToClientEvents, ClientToServerEvents> = io.io(SOCKET_BASE_URL, {
+            reconnection: false,
+            query: { username, room },
         });
-      }
-    },
-    [socket, room, username]
-  );
 
-  useEffect(() => {
-    const queryParams = { username: username, room: room };
-    const s = io(SOCKET_BASE_URL, {
-      reconnection: false,
-      query: queryParams,
-    });
-    setSocket(s);
-    s.on("connect", () => setConnected(true));
-    s.on("read_message", (res: SocketResponse) => {
-      console.log(res);
-      setSocketResponse(res);
-    });
+        setSocket(s);
 
-    return () => {
-      if (s) {
-        s.disconnect();
-      }
-    };
-  }, [room, username]);
+        s.on("connect", () => setConnected(true));
+        s.on("disconnect", () => setConnected(false));
+        s.on("read_message", (res) => {
+            setSocketResponse({
+                room: res.room,
+                content: res.content,
+                username: res.username,
+                messageType: res.messageType,
+                createdDateTime: res.createdDateTime,
+            });
+        });
 
-  return { socketResponse, isConnected, sendData };
+        return () => {
+            s.disconnect();
+        };
+    }, [room, username]);
+
+    return { socketResponse, isConnected, sendData };
 };

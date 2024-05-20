@@ -6,58 +6,56 @@ import { MessageList } from "./MessageList";
 import { useFetch } from "../../customHooks/useFetch";
 
 interface MessageProps {
-  room: string;
-  username: string;
+    room: string;
+    username: string;
 }
 
 interface MessageItem {
-  messageType: string;
-  username: string;
-  content: string;
-  createdDateTime: Date;
+    messageType: string;
+    username: string;
+    content: string;
+    createdDateTime: Date;
 }
 
+
 export const Message: React.FC<MessageProps> = ({ room, username }) => {
-  const { socketResponse, sendData } = useSocket(room, username);
-  const [messageInput, setMessageInput] = useState<string>("");
+  const { isConnected, socketResponse, sendData } = useSocket(room, username);
+  const [messageInput, setMessageInput] = useState("");
   const [messageList, setMessageList] = useState<MessageItem[]>([]);
 
-  const { responseData } = useFetch("/message/" + room);
+  const { responseData, error, loading } = useFetch(`/message/${room}`);
 
-  const addMessageToList = (val: MessageItem) => {
-    if (val.content === "") return;
-    setMessageList([...messageList, val]);
+  const addMessageToList = (message: MessageItem) => {
+    if (message.content === "") return; // Filter out empty messages
+    setMessageList([...messageList, message]);
   };
 
   useEffect(() => {
-    if (Array.isArray(responseData)) {
-      setMessageList((prevMessageList) => [...prevMessageList, ...responseData]);
+    if (responseData && responseData.length > 0) {
+      setMessageList([...responseData, ...messageList]);
     }
   }, [responseData]);
 
   useEffect(() => {
-    console.log("Socket Response: ", socketResponse);
     if (socketResponse) {
       const transformedResponse: MessageItem = {
-        messageType: socketResponse.messageType || "",
-        username: socketResponse.username || "",
-        content: socketResponse.content || "",
-        createdDateTime: new Date(),
+        messageType: socketResponse.messageType,
+        username: socketResponse.username,
+        content: socketResponse.content,
+        createdDateTime: new Date(), // Use ISO 8601 format
       };
       addMessageToList(transformedResponse);
     }
   }, [socketResponse]);
 
-  const sendMessage = (e: React.FormEvent) => {
+  const sendMessage = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (messageInput !== "") {
-      sendData({
-        content: messageInput,
-      });
+      sendData({ content: messageInput });
       const newMessage: MessageItem = {
         content: messageInput,
         username: username,
-        createdDateTime: new Date(),
+        createdDateTime: new Date(), // Use ISO 8601 format
         messageType: "CLIENT",
       };
       addMessageToList(newMessage);
@@ -71,7 +69,7 @@ export const Message: React.FC<MessageProps> = ({ room, username }) => {
       <span className="user_name">Welcome: {username} </span>
       <div className="message_component">
         <MessageList username={username} messageList={messageList} />
-        <form className="chat-input" onSubmit={(e) => sendMessage(e)}>
+        <form className="chat-input" onSubmit={sendMessage}>
           <input
             type="text"
             value={messageInput}

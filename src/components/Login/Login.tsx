@@ -11,11 +11,11 @@ interface LoginProps {
 }
 
 export const Login: React.FC<LoginProps> = ({
-  room,
-  setRoom,
-  username,
-  setUsername,
-  setLoggedIn,
+  room:room,
+  setRoom: setRoom,
+  username: username,
+  setUsername: setUsername,
+  setLoggedIn: setLoggedIn,
 }) => {
   const checkForLogin = (e: React.FormEvent) => {
     e.preventDefault();

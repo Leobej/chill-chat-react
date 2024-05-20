@@ -4,7 +4,7 @@ import { Login } from "./components/Login/Login";
 import { useState } from "react";
 import { Message } from "./components/Message/Message";
 
-function App() {
+function App(): JSX.Element {
   const [username, setUsername] = useState<string>("");
   const [room, setRoom] = useState<string>("");
   const [isLoggedIn, setLoggedIn] = useState<boolean>(false);
