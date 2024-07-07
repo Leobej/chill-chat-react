@@ -8,13 +8,16 @@ interface MessageListProps {
     username: string;
     content: string;
     createdDateTime: Date;
-  }[];//
+  }[];
   username: string;
 }
 
-export const MessageList: React.FC<MessageListProps> = ({ messageList, username }) => {
+export const MessageList: React.FC<MessageListProps> = ({
+  messageList,
+  username,
+}) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });

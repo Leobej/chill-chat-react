@@ -12,7 +12,10 @@ interface MessageItemProps {
   username: string;
 }
 
-export const MessageItem: React.FC<MessageItemProps> = ({ message, username }) => {
+export const MessageItem: React.FC<MessageItemProps> = ({
+  message,
+  username,
+}) => {
   const type: string = message.messageType.toLowerCase();
   const self: string = message.username === username ? "_self" : "";
   const time: string = timeStampConverter(message.createdDateTime);

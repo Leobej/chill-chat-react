@@ -54,9 +54,7 @@ export const useSocket = (room: string, username: string): UseSocketReturnType =
 
         setSocket(s);
 
-        s.on("connect", () => setConnected(true));
-        s.on("disconnect", () => setConnected(false));
-        s.on("read_message", (res) => {
+        const handleReadMessage = (res: SocketResponse) => {
             setSocketResponse({
                 room: res.room,
                 content: res.content,
@@ -64,9 +62,14 @@ export const useSocket = (room: string, username: string): UseSocketReturnType =
                 messageType: res.messageType,
                 createdDateTime: res.createdDateTime,
             });
-        });
+        };
+
+        s.on("connect", () => setConnected(true));
+        s.on("disconnect", () => setConnected(false));
+        s.on("read_message", handleReadMessage);
 
         return () => {
+            s.off("read_message", handleReadMessage);
             s.disconnect();
         };
     }, [room, username]);
